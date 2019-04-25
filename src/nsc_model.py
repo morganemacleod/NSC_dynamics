@@ -17,82 +17,91 @@ class nsc_model:
         self.gamma = gamma
         self.sigma_h = 2.3e5*(self.Mbh/self.c.msun)**(1./4.38)  # Kormendy, MacLeod 2014
         self.r_h = self.c.G * self.Mbh/self.sigma_h**2 # sphere of influence
-        #MM
         self.r_m = rm_o_rh*self.r_h  # encloses 2Mbh
-        self.n_m = (mrm_o_mbh/2.)*(3-self.gamma)/(2*np.pi) *(self.Mbh/self.ms)*self.r_m**-3  # eq 3.48
+        self.n_m = (mrm_o_mbh/2.)*(3-self.gamma)/(2*np.pi) *(self.Mbh/self.ms)*self.r_m**-3  # Merritt eq 3.48
         self.mrm_o_mbh = mrm_o_mbh
         self.phi0 = (self.c.G*self.Mbh/self.r_m)
         self.f0 = ((2*np.pi)**-1.5 * self.n_m * self.phi0**-self.gamma 
-                   *scipy.special.gamma(self.gamma+1.)/scipy.special.gamma(self.gamma-0.5) )
+                   *scipy.special.gamma(self.gamma+1.)/scipy.special.gamma(self.gamma-0.5) )  # vasiliev & merritt 2013
         
     def rho(self,r):
+        """ Stellar mass density as a function of radius  """
         rho_m = self.n_m*self.ms 
         return rho_m * (r/self.r_m)**-self.gamma # eq 3.48
        
     def sigma(self,r):
-        #return np.sqrt(self.c.G * self.Mbh /((1+self.gamma)*r) + self.sigma_h**2) # eq 3.63a
-        #MM
-        return np.sqrt(self.c.G * self.Mbh /((1+self.gamma)*r) )   
+        """ Stellar velocity dispersion as a function of radius  """
+        #return np.sqrt(self.c.G * self.Mbh /((1+self.gamma)*r) + self.sigma_h**2) # eq 3.63a, includes flattening outside r_h
+        return np.sqrt(self.c.G * self.Mbh /((1+self.gamma)*r) )   # keplerian regime
   
     def t_r(self,r):
+        """ two-body relaxation timescale (r)  """
         lnC = np.log(self.Mbh/self.ms)
         return 0.34*self.sigma(r)**3/(self.c.G**2*self.ms*self.rho(r)*lnC)
     
     def P(self,r):
+        """ orbital period given SMA """
         return 2*np.pi*np.sqrt( r**3/(self.c.G*(self.Mbh)) )
     
     def E(self,r):
+        """ orbital energy given SMA  """
         return self.c.G*(self.Mbh)/(2.*r)
     
     def a(self,E):
+        """ orbital SMA given energy """
         return self.c.G*(self.Mbh)/(2.*E)
     
     def Jc(self,r):
+        """ circular angular momentum given SMA """
         return np.sqrt(self.c.G*self.Mbh*r)
         
     def DeltaErms(self,r):
+        """ RMS Delta Energy over one orbital period from two-body relaxation """
         return self.E(r)*np.sqrt(self.P(r)/self.t_r(r))
     
     def DeltaJrms(self,r):
+        """ RMS Delta Ang Momentum over one orbital period from two-body relaxation """
         return self.Jc(r)*np.sqrt(self.P(r)/self.t_r(r)) 
 
     def fE(self,E):
-        """Vasiliev & Merritt 2013"""
+        """Distribution function (E); Vasiliev & Merritt 2013"""
         return self.f0*E**(self.gamma-1.5)
     
     def Jlc(self,E,rlc):
-        """approximately equal to sqrt(2*G*Mbh*rlc)"""
+        """Loss cone angular momentum given Energy, periapse radius of loss cone
+           approximately equal to sqrt(2*G*Mbh*rlc)"""
         return np.sqrt(2*rlc**2 * (self.c.G*self.Mbh/rlc - E) )
     
     def qE(self,E,rlc):
-        """MacLeod2012"""
+        """ ratio of per orbit scatter to loss cone angular momentum; MacLeod2012"""
         return self.DeltaJrms(self.a(E))**2 / self.Jlc(E,rlc)**2
     
     def Rlc(self,E,rlc):
-        """MacLeod2012"""
+        """ Dimensionless loss cone angular momentum; MacLeod2012"""
         return self.Jlc(E,rlc)**2/self.Jc(self.a(E))**2
     
     def R0(self,E,rlc):
-        """eq 6.66 p 304"""
+        """ Dimensionless Cohn & Kulsrud minimum populated Ang momentum; Merritt eq 6.66 p 304"""
         q = self.qE(E,rlc)
         alpha = (q**4 + q**2)**0.25
         return self.Rlc(E,rlc)*exp(-alpha)
     
     
     def lnR0Inv(self,E,rlc):
-        """log(1/R0), based on eq 6.66 p 304"""
+        """Dimensionless Cohn & Kulsrud minimum populated Ang momentum --> log(1/R0), based on eq 6.66 p 304"""
         q = self.qE(E,rlc)
         alpha = (q**4 + q**2)**0.25
         return -np.log(self.Rlc(E,rlc)) + alpha
     
     
     def flux_flc(self,E,rlc):
-        """similar to eq 6.10b, p293, doesn't assume Jlc^2 = 2GMrp """
+        """Full loss cone flux as a function of Energy, radius of loss cone
+           similar to Merritt eq 6.10b, p293, doesn't assume Jlc^2 = 2GMrp """
         return 4.*np.pi**2 * self.fE(E) * self.Jlc(E,rlc)**2
   
     
     def flux_lc(self,E,rlc):
-        """eq 6.71 (p304)"""
+        """loss cone flux as a function of Energy, radius of loss cone; Merritt eq 6.71 (p304)"""
         return  self.qE(E,rlc)*self.flux_flc(E,rlc)/self.lnR0Inv(E,rlc) 
     
     
