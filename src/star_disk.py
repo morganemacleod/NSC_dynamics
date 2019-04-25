@@ -48,7 +48,7 @@ class disk_Q:
         self.rs = rs       
         Mdot_Edd = (4.*np.pi*self.c.G*Mbh*self.c.mp/(0.1 *self.c.sigmaT*self.c.c))
         self.Mdot_disk = lambda_disk*Mdot_Edd
-        print ("Mdot_Edd = ",Mdot_Edd/c.msun*c.yr, "(msun/yr) Mdot_disk =",self.Mdot_disk/c.msun*c.yr,"(msun/yr)")
+        print ("Mdot_Edd = ",Mdot_Edd/self.c.msun*self.c.yr, "(msun/yr) Mdot_disk =",self.Mdot_disk/self.c.msun*self.c.yr,"(msun/yr)")
         self.alpha = alpha_disk
         self.Q = Q_disk
         
@@ -223,8 +223,8 @@ class star_disk:
         h0 = np.linalg.norm(hv)
         
         my_ele = (a,e,OMEGA,omega,I)
-        c1_ele = s.disk_cross(my_ele,"in")
-        c2_ele = s.disk_cross(c1_ele,"out")
+        c1_ele = self.disk_cross(my_ele,"in")
+        c2_ele = self.disk_cross(c1_ele,"out")
         
         a,e,OMEGA,omega,I = c2_ele
         Ef = -self.c.G*self.Mbh/(2*a)
