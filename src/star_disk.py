@@ -235,7 +235,8 @@ class star_disk:
         dE = Ef-E0
         dh = hf-h0
         return dE,E0,dh,h0
-    
+
+ 
 
 
         

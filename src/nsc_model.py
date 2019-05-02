@@ -84,7 +84,7 @@ class nsc_model:
         """ Dimensionless Cohn & Kulsrud minimum populated Ang momentum; Merritt eq 6.66 p 304"""
         q = self.qE(E,rlc)
         alpha = (q**4 + q**2)**0.25
-        return self.Rlc(E,rlc)*exp(-alpha)
+        return self.Rlc(E,rlc)*np.exp(-alpha)
     
     
     def lnR0Inv(self,E,rlc):
@@ -102,8 +102,16 @@ class nsc_model:
     
     def flux_lc(self,E,rlc):
         """loss cone flux as a function of Energy, radius of loss cone; Merritt eq 6.71 (p304)"""
-        return  self.qE(E,rlc)*self.flux_flc(E,rlc)/self.lnR0Inv(E,rlc) 
-    
+        return  self.qE(E,rlc)*self.flux_flc(E,rlc)/self.lnR0Inv(E,rlc)
+
+
+    def flux_lc_disk(self,E,rlc_tidal,rlc_disk):
+        """loss cone flux as a function of Energy, radius of loss cone; Merritt eq 6.71 (p304)"""
+        if rlc_disk > rlc_tidal:
+            return  self.qE(E,rlc_disk)*self.flux_flc(E,rlc_tidal)/self.lnR0Inv(E,rlc_disk) 
+        else:
+            return self.flux_lc(E,rlc_tidal)
+  
     
     def test_plot_TDE_rate(self):
         """TO RUN TEST:
